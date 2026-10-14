@@ -39,8 +39,57 @@ def train_test(X, y, test_size=0.25, random_state=0):
 
     return (X_train, X_test, y_train, y_test)
 
-# Step 3 - validation_set_curve (not yet solved)
-# TODO: implement
+# Step 3 - validation_set_curve
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures
+
+def poly_model(degree):
+    # TODO: PolynomialFeatures(degree) -> LinearRegression
+    return make_pipeline(PolynomialFeatures(degree), LinearRegression())
+    
+
+def validation_set_curve(X, y, feature, degrees, random_state):
+    # TODO: 50/50 split of X[[feature]]; {degree: validation MSE rounded to 1 decimal}
+
+    X_sub = X[[feature]]
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_sub, y, test_size=0.5, random_state=random_state
+    )
+
+    result ={}
+
+
+    for deg in degrees:
+        model = poly_model(deg)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_val)
+        mse = mean_squared_error(y_val, preds)
+        result[deg] = round(float(mse), 1)
+        
+    return result
+
+
+def curve_spread(X, y, feature, degrees, seeds):
+    # TODO: per degree, max - min of the validation MSE across seeds, rounded to 1 decimal
+    mse_per_degree = {deg: [] for deg in degrees}
+    
+    for seed in seeds:
+        # Get the validation curve for the current seed
+        seed_curve = validation_set_curve(X, y, feature, degrees, random_state=seed)
+        for deg in degrees:
+            mse_per_degree[deg].append(seed_curve[deg])
+            
+    # Calculate max - min for each degree and round to 1 decimal place
+    spread_result = {}
+    for deg in degrees:
+        spread = max(mse_per_degree[deg]) - min(mse_per_degree[deg])
+        spread_result[deg] = round(float(spread), 1)
+        
+    return spread_result
 
 # Step 4 - cv_mse (not yet solved)
 # TODO: implement
