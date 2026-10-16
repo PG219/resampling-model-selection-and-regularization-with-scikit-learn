@@ -159,8 +159,66 @@ def compare_with_loocv(estimator, X, y, ks, seeds):
         'kfold': cv_spread_by_k(estimator,X,y,ks,seeds)
     }
 
-# Step 6 - bootstrap_coefficients (not yet solved)
-# TODO: implement
+# Step 6 - bootstrap_coefficients
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+def bootstrap_coefficients(X, y, n_boot=200, random_state=0):
+    rng = np.random.default_rng(random_state)
+    n = len(X)
+    coefs = []
+    
+    for _ in range(n_boot):
+        # Draw n random indices with replacement
+        idx = rng.integers(0, n, n)
+        
+        # Resample X and y using positional indexing (.iloc for pandas DataFrames)
+        X_resampled = X.iloc[idx]
+        y_resampled = y.iloc[idx]
+        
+        # Fit LinearRegression on the resampled data
+        model = LinearRegression()
+        model.fit(X_resampled, y_resampled)
+        
+        # Store coefficients
+        coefs.append(model.coef_)
+        
+    return np.array(coefs)
+
+def bootstrap_se(coefs):
+    # TODO: std over replicates (ddof=1), rounded to 2 decimals
+   return np.round(np.std(coefs, axis=0, ddof=1), 2)
+
+def ols_standard_errors(X, y):
+# Convert pandas to numpy arrays if necessary
+    X_vals = X.values if hasattr(X, "values") else np.array(X)
+    y_vals = y.values if hasattr(y, "values") else np.array(y)
+    
+    n, p = X_vals.shape
+    
+    # Build design matrix A = [1, X]
+    A = np.hstack([np.ones((n, 1)), X_vals])
+    
+    # Fit OLS manually to get predictions and residuals
+    # beta = (A^T A)^-1 A^T y
+    beta = np.linalg.pinv(A.T @ A) @ A.T @ y_vals
+    
+    # Predictions and residuals
+    y_pred = A @ beta
+    residuals = y_vals - y_pred
+    rss = np.sum(residuals ** 2)
+    
+    # Estimate sigma^2
+    sigma2 = rss / (n - p - 1)
+    
+    # Covariance matrix of coefficients: sigma^2 * (A^T A)^-1
+    cov_matrix = sigma2 * np.linalg.pinv(A.T @ A)
+    
+    # Standard errors are the square root of the diagonal
+    se = np.sqrt(np.diag(cov_matrix))
+    
+    # Drop the intercept entry (first element) and round to 2 decimals
+    return np.round(se[1:], 2)
 
 # Step 7 - stepwise_path (not yet solved)
 # TODO: implement
