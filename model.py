@@ -246,8 +246,37 @@ def stepwise_path(X, y, direction, cv):
 
     return path
 
-# Step 8 - score_path (not yet solved)
-# TODO: implement
+# Step 8 - score_path
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import cross_val_score
+
+def score_path(X, y, path, cv):
+    # TODO: (sizes, means, ses) with neg MSE cross_val_score on X[path[k]] per size
+    sizes = []
+    means = []
+    ses = []
+
+    n_folds = cv if isinstance(cv, int) else cv.get_n_splits(X,y)
+
+    for k in sorted(path.keys()):
+        X_subset = X[path[k]]
+        neg_scores = cross_val_score(LinearRegression(),X_subset, y, cv=cv, scoring='neg_mean_squared_error')
+        scores = -neg_scores
+        mean_val = round(float(np.mean(scores)), 1)
+        se_val = round(float(np.std(scores, ddof=1) / np.sqrt(n_folds)), 1)
+        
+        sizes.append(k)
+        means.append(mean_val)
+        ses.append(se_val)
+        
+    return sizes, means, ses
+
+
+def best_size(sizes, means):
+    # TODO: the size with the smallest mean
+    min_idx = np.argmin(means)
+    return sizes[min_idx]
 
 # Step 9 - one_se_rule (not yet solved)
 # TODO: implement
