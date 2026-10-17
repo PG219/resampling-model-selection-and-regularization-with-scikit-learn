@@ -220,8 +220,31 @@ def ols_standard_errors(X, y):
     # Drop the intercept entry (first element) and round to 2 decimals
     return np.round(se[1:], 2)
 
-# Step 7 - stepwise_path (not yet solved)
-# TODO: implement
+# Step 7 - stepwise_path
+from sklearn.feature_selection import SequentialFeatureSelector
+from sklearn.linear_model import LinearRegression
+
+def select_features(X, y, k, direction, cv):
+    
+    sfs = SequentialFeatureSelector(estimator = LinearRegression(), n_features_to_select = k, direction = direction, cv=cv, scoring='neg_mean_squared_error')
+
+    sfs.fit(X,y)
+
+    selected_mask = sfs.get_support()
+    selected_features = list(X.columns[selected_mask])
+    return selected_features
+
+def stepwise_path(X, y, direction, cv):
+    # TODO: {k: selected features} for k = 1..p-1, plus k = p -> all columns
+    p = X.shape[1]
+
+    path = {}
+    for k in range(1,p):
+        path[k] = select_features(X,y,k=k, direction = direction, cv = cv)
+
+    path[p] = list(X.columns)
+
+    return path
 
 # Step 8 - score_path (not yet solved)
 # TODO: implement
